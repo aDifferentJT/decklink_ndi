@@ -173,8 +173,12 @@ int main(int, char **) {
   auto deckLinkIterator = MakeDeckLinkPtr(CreateDeckLinkIteratorInstance());
 #elif defined(WIN32)
   auto deckLinkIterator = DeckLinkPtr<IDeckLinkIterator>{};
-  CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
-                   IID_IDeckLinkIterator, out_ptr(deckLinkIterator));
+  if (CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
+                       IID_IDeckLinkIterator,
+                       out_ptr(deckLinkIterator)) != S_OK) {
+    std::cerr << "Could not get a DeckLink Iterator (Windows)\n";
+    std::terminate();
+  }
 #endif
 
   if (deckLinkIterator == nullptr) {
