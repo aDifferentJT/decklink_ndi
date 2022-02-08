@@ -1,0 +1,5 @@
+# Decklink to NDI bridge
+
+Note that for now audio is not supported.
+
+The Decklink SDK and NDI headers are relicensed under their respective license agreements.

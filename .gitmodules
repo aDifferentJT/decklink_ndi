@@ -1,0 +1,3 @@
+[submodule "out_ptr"]
+	path = out_ptr
+	url = https://github.com/soasis/out_ptr.git
