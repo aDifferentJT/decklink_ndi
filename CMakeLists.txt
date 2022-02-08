@@ -25,7 +25,7 @@ if (${PLATFORM} MATCHES Mac)
     message(FATAL_ERROR "Foundation not found")
   endif()
   
-  target_link_libraries(decklink_ndi ${FOUNDATION})
+  target_link_libraries(decklink_ndi PRIVATE ${FOUNDATION})
 endif()
 
 if (${PLATFORM} MATCHES Linux)
@@ -34,6 +34,10 @@ if (${PLATFORM} MATCHES Linux)
     message(FATAL_ERROR "dl not found")
   endif()
   
-  target_link_libraries(decklink_ndi ${DL})
+  target_link_libraries(decklink_ndi PRIVATE ${DL})
+
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+  target_link_libraries(my_app PRIVATE Threads::Threads)
 endif()
 
