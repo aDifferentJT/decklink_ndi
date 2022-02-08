@@ -1305,18 +1305,17 @@ importlib("stdole2.tlb");
 };
 
 // import deprecated interfaces
-
-#include "DeckLinkAPI_v11_5_1.idl"
+#include "DeckLinkAPI_v11_4.idl"
 #include "DeckLinkAPI_v10_11.idl"
+#include "DeckLinkAPI_v11_5_1.idl"
+#include "DeckLinkAPI_v11_5.idl"
 #include "DeckLinkAPI_v10_9.idl"
 #include "DeckLinkAPIStreaming_v10_8.idl"
-#include "DeckLinkAPI_v10_4.idl"
-#include "DeckLinkAPI_v10_2.idl"
-#include "DeckLinkAPI_v11_5.idl"
-#include "DeckLinkAPI_v11_4.idl"
 #include "DeckLinkAPI_v10_8.idl"
 #include "DeckLinkAPI_v10_6.idl"
 #include "DeckLinkAPI_v10_5.idl"
+#include "DeckLinkAPI_v10_4.idl"
+#include "DeckLinkAPI_v10_2.idl"
 #include "DeckLinkAPI_v9_9.idl"
 #include "DeckLinkAPI_v9_2.idl"
 #include "DeckLinkAPI_v8_1.idl"

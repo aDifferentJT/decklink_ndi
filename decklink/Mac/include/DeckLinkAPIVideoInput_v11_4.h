@@ -29,7 +29,6 @@
 #define BMD_DECKLINKAPIVIDEOINPUT_v11_4_H
 
 #include "DeckLinkAPI.h"
-#include "DeckLinkAPIVideoInput_v11_5_1.h"
 
 // Type Declarations
 
@@ -64,7 +63,7 @@ public:
     virtual HRESULT StopStreams (void) = 0;
     virtual HRESULT PauseStreams (void) = 0;
     virtual HRESULT FlushStreams (void) = 0;
-    virtual HRESULT SetCallback (/* in */ IDeckLinkInputCallback_v11_5_1* theCallback) = 0;
+    virtual HRESULT SetCallback (/* in */ IDeckLinkInputCallback* theCallback) = 0;
 
     /* Hardware Timing */
 
