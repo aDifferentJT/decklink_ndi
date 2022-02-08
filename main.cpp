@@ -24,11 +24,12 @@
 #include <windows.h>
 #endif
 
-#ifndef TRUE
-#define TRUE true
-#endif
-#ifndef FALSE
-#define FALSE false
+#if defined(UNIX)
+constexpr auto True = true;
+constexpr auto False = false;
+#elif defined(WIN32)
+constexpr auto True = TRUE;
+constexpr auto False = FALSE;
 #endif
 
 using namespace std::literals;
@@ -199,23 +200,23 @@ int main(int, char **) {
   auto displayMode =
       find_if<IDeckLinkDisplayMode>(displayModeIterator, [&](auto const &mode) {
         if (mode->GetWidth() != width) {
-          return FALSE;
+          return False;
         }
         if (mode->GetHeight() != height) {
-          return FALSE;
+          return False;
         }
         auto fpsValue = BMDTimeValue{};
         auto fpsScale = BMDTimeValue{};
         mode->GetFrameRate(&fpsValue, &fpsScale);
         if (fpsValue != fps * fpsScale) {
-          return FALSE;
+          return False;
         }
-        auto supported = FALSE;
+        auto supported = False;
         if (deckLinkInput->DoesSupportVideoMode(
                 bmdVideoConnectionUnspecified, mode->GetDisplayMode(),
                 bmdColourSpace, bmdNoVideoInputConversion,
                 bmdSupportedVideoModeDefault, nullptr, &supported) != S_OK) {
-          return FALSE;
+          return False;
         }
         return supported;
       });
