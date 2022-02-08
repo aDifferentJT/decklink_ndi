@@ -15,8 +15,8 @@
 #if defined(UNIX)
 #include <DeckLinkAPIDispatch.cpp>
 #elif defined(WIN32)
-#include <DeckLinkAPI_i.h>
 #include <DeckLinkAPI_i.c>
+#include <DeckLinkAPI_i.h>
 #endif
 
 #if defined(UNIX)
@@ -178,24 +178,28 @@ int main(int, char **) {
 #endif
 
   if (deckLinkIterator == nullptr) {
-    return EXIT_FAILURE;
+    std::cerr << "Could not get a DeckLink Iterator\n";
+    std::terminate();
   }
 
   auto deckLink = DeckLinkPtr<IDeckLink>{};
   if (deckLinkIterator->Next(out_ptr(deckLink)) != S_OK) {
-    return EXIT_FAILURE;
+    std::cerr << "Could not find a DeckLink device\n";
+    std::terminate();
   }
 
   auto deckLinkInput = DeckLinkPtr<IDeckLinkInput>{};
   if (deckLink->QueryInterface(IID_IDeckLinkInput, out_ptr(deckLinkInput)) !=
       S_OK) {
-    return EXIT_FAILURE;
+    std::cerr << "Could not get a DeckLink input\n";
+    std::terminate();
   }
 
   auto displayModeIterator = DeckLinkPtr<IDeckLinkDisplayModeIterator>{};
   if (deckLinkInput->GetDisplayModeIterator(out_ptr(displayModeIterator)) !=
       S_OK) {
-    return EXIT_FAILURE;
+    std::cerr << "Could not get a display mode iterator\n";
+    std::terminate();
   }
 
   auto displayMode =
@@ -221,24 +225,34 @@ int main(int, char **) {
         }
         return supported;
       });
+  if (displayMode == nullptr) {
+    std::cerr << "Could not find a matching display mode\n";
+    std::terminate();
+  }
 
   if (deckLinkInput->EnableVideoInput(displayMode->GetDisplayMode(),
                                       bmdColourSpace,
                                       bmdVideoInputFlagDefault) != S_OK) {
-    return EXIT_FAILURE;
+    std::cerr << "Could not enable video input\n";
+    std::terminate();
   }
 
   auto callback = Callback{};
 
   if (deckLinkInput->SetCallback(&callback) != S_OK) {
-    return EXIT_FAILURE;
+    std::cerr << "Could not set callback\n";
+    std::terminate();
   }
 
   if (deckLinkInput->StartStreams() != S_OK) {
-    return EXIT_FAILURE;
+    std::cerr << "Could not start streams\n";
+    std::terminate();
   }
 
-  while (true) {}
+  while (true) {
+  }
 
-  if (deckLinkInput->StopStreams() != S_OK) { return EXIT_FAILURE; }
+  if (deckLinkInput->StopStreams() != S_OK) {
+    return EXIT_FAILURE;
+  }
 }
