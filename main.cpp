@@ -160,7 +160,13 @@ private:
 };
 
 int main(int, char **) {
+#if defined(UNIX)
   auto deckLinkIterator = MakeDeckLinkPtr(CreateDeckLinkIteratorInstance());
+#elif defined(WIN32)
+  auto deckLinkIterator = DeckLinkPtr<IDeckLinkIterator>{};
+  CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL, IID_IDeckLinkIterator, out_ptr(deckLinkIterator));
+#endif
+
   if (deckLinkIterator == nullptr) {
     return EXIT_FAILURE;
   }
