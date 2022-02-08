@@ -24,6 +24,13 @@
 #include <windows.h>
 #endif
 
+#ifndef TRUE
+#define TRUE true
+#endif
+#ifndef FALSE
+#define FALSE false
+#endif
+
 using namespace std::literals;
 
 constexpr auto width = 1920;
@@ -192,28 +199,23 @@ int main(int, char **) {
   auto displayMode =
       find_if<IDeckLinkDisplayMode>(displayModeIterator, [&](auto const &mode) {
         if (mode->GetWidth() != width) {
-          return false;
+          return FALSE;
         }
         if (mode->GetHeight() != height) {
-          return false;
+          return FALSE;
         }
         auto fpsValue = BMDTimeValue{};
         auto fpsScale = BMDTimeValue{};
         mode->GetFrameRate(&fpsValue, &fpsScale);
         if (fpsValue != fps * fpsScale) {
-          return false;
+          return FALSE;
         }
-#if defined(UNIX)
-        bool
-#elif defined(WIN32)
-        BOOL
-#endif
-            supported = false;
+        auto supported = FALSE;
         if (deckLinkInput->DoesSupportVideoMode(
                 bmdVideoConnectionUnspecified, mode->GetDisplayMode(),
                 bmdColourSpace, bmdNoVideoInputConversion,
                 bmdSupportedVideoModeDefault, nullptr, &supported) != S_OK) {
-          return false;
+          return FALSE;
         }
         return supported;
       });
@@ -234,5 +236,7 @@ int main(int, char **) {
     return EXIT_FAILURE;
   }
 
-  // if (deckLinkInput->StopStreams() != S_OK) { return EXIT_FAILURE; }
+  while (true) {}
+
+  if (deckLinkInput->StopStreams() != S_OK) { return EXIT_FAILURE; }
 }
