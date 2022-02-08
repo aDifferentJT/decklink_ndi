@@ -7,7 +7,8 @@
 
 #include <Processing.NDI.Lib.h>
 
-#if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#if defined(__unix__) || defined(__unix) ||                                    \
+    (defined(__APPLE__) && defined(__MACH__))
 #define UNIX
 #endif
 
@@ -60,7 +61,13 @@ class Callback : public IDeckLinkInputCallback {
 private:
   DeckLinkPtr<IDeckLinkVideoInputFrame> lastFrame;
 
-  void *dl;
+#if defined(UNIX)
+  void *
+#elif defined(WIN32)
+  HMODULE
+#endif
+      dl;
+
   NDIlib_v5 const *lib;
   NDIlib_send_instance_t sender;
 
