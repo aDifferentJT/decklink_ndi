@@ -38,11 +38,16 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}}
 
+    - name: Copy executable
+      run: |
+        mkdir release
+        cp build/decklink_ndi* release/
+
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: decklink_ndi_${{ runner.os }}
-        path: ${{github.workspace}}/build/decklink_ndi*
+        name: release_${{ runner.os }}
+        path: ${{github.workspace}}/release/*
 
     - name: GH Release
       if: startsWith(github.ref, 'refs/tags')
