@@ -11,10 +11,10 @@
 #define UNIX
 #endif
 
+#include <DeckLinkAPI.h>
+
 #if defined(UNIX)
 #include <DeckLinkAPIDispatch.cpp>
-#elif defined(WIN32)
-#include <DeckLinkAPI.idl>
 #endif
 
 #if defined(UNIX)

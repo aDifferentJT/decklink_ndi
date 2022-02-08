@@ -1,3 +1,6 @@
 [submodule "out_ptr"]
 	path = out_ptr
 	url = https://github.com/soasis/out_ptr.git
+[submodule "FindIDL"]
+	path = FindIDL
+	url = https://github.com/apriorit/FindIDL.git

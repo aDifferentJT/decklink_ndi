@@ -13,6 +13,12 @@ elseif (CMAKE_SYSTEM_NAME MATCHES Windows)
   set(PLATFORM Win)
 endif()
 
+if (CMAKE_SYSTEM_NAME MATCHES Windows)
+  # Use FindIDL
+  list(APPEND CMAKE_MODULE_PATH "FindIDL/cmake")
+  find_package(IDL REQUIRED)
+endif()
+
 include_directories(out_ptr/include)
 include_directories(decklink/${PLATFORM}/include)
 include_directories(ndi/include)
@@ -39,5 +45,10 @@ if (UNIX)
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads REQUIRED)
   target_link_libraries(decklink_ndi PRIVATE Threads::Threads)
+endif()
+
+if (CMAKE_SYSTEM_NAME MATCHES Windows)
+  add_idl(DeckLinkAPI decklink/Win/include/DeckLinkAPI.idl)
+  target_link_libraries(decklink_ndi PRIVATE DeckLinkAPI)
 endif()
 
