@@ -15,7 +15,7 @@
 #if defined(UNIX)
 #include <DeckLinkAPIDispatch.cpp>
 #elif defined(WIN32)
-#include <DeckLinkAPI_i.h>
+#include <DeckLinkAPI_i.c>
 #endif
 
 #if defined(UNIX)
