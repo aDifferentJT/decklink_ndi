@@ -164,7 +164,8 @@ int main(int, char **) {
   auto deckLinkIterator = MakeDeckLinkPtr(CreateDeckLinkIteratorInstance());
 #elif defined(WIN32)
   auto deckLinkIterator = DeckLinkPtr<IDeckLinkIterator>{};
-  CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL, IID_IDeckLinkIterator, out_ptr(deckLinkIterator));
+  CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
+                   IID_IDeckLinkIterator, out_ptr(deckLinkIterator));
 #endif
 
   if (deckLinkIterator == nullptr) {
@@ -202,7 +203,12 @@ int main(int, char **) {
         if (fpsValue != fps * fpsScale) {
           return false;
         }
-        auto supported = false;
+#if defined(UNIX)
+        bool
+#elif defined(WIN32)
+        BOOL
+#endif
+            supported = false;
         if (deckLinkInput->DoesSupportVideoMode(
                 bmdVideoConnectionUnspecified, mode->GetDisplayMode(),
                 bmdColourSpace, bmdNoVideoInputConversion,
