@@ -3,13 +3,21 @@
 #include <memory>
 #include <string>
 
-#include <dlfcn.h>
-
 #include <ztd/out_ptr.hpp>
 
 #include <DeckLinkAPIDispatch.cpp>
 
 #include <Processing.NDI.Lib.h>
+
+#if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
+#define UNIX
+#endif
+
+#if defined(UNIX)
+#include <dlfcn.h>
+#elif defined(WIN32)
+#include <windows.h>
+#endif
 
 using namespace std::literals;
 
@@ -61,13 +69,22 @@ public:
 #endif
     auto path = dir + NDILIB_LIBRARY_NAME;
 
+#if defined(UNIX)
     dl = dlopen(path.c_str(), 0);
-    if (dl == 0) {
+#elif defined(WIN32)
+    dl = LoadLibraryA(path.c_str());
+#endif
+    if (!dl) {
       std::cerr << "Can't find NDI lib\n";
       std::terminate();
     }
     lib = reinterpret_cast<decltype(&NDIlib_v5_load)>(
-        dlsym(dl, "NDIlib_v5_load"))();
+#if defined(UNIX)
+        dlsym
+#elif defined(WIN32)
+        GetProcAddress
+#endif
+        (dl, "NDIlib_v5_load"))();
     if (lib == nullptr) {
       std::cerr << "Can't find NDI lib\n";
       std::terminate();
@@ -88,7 +105,11 @@ public:
 
   ~Callback() {
     lib->send_destroy(sender);
+#if defined(UNIX)
     dlclose(dl);
+#elif defined(WIN32)
+    FreeLibrary(dl);
+#endif
   }
 
 private:

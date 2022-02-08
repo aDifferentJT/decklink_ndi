@@ -41,7 +41,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: release_${{ runner.os }}
+        name: decklink_ndi_${{ runner.os }}
         path: ${{github.workspace}}/build/decklink_ndi*
 
     - name: GH Release
