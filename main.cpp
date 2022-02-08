@@ -5,12 +5,16 @@
 
 #include <ztd/out_ptr.hpp>
 
-#include <DeckLinkAPIDispatch.cpp>
-
 #include <Processing.NDI.Lib.h>
 
 #if defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__))
 #define UNIX
+#endif
+
+#if defined(UNIX)
+#include <DeckLinkAPIDispatch.cpp>
+#elif defined(WIN32)
+#include <DeckLinkAPI.idl>
 #endif
 
 #if defined(UNIX)
