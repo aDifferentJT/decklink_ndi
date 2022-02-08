@@ -19,7 +19,7 @@ include_directories(ndi/include)
 
 add_executable(decklink_ndi main.cpp)
 
-if (${PLATFORM} MATCHES Mac)
+if (APPLE)
   find_library(FOUNDATION Foundation)
   if (NOT FOUNDATION)
     message(FATAL_ERROR "Foundation not found")
@@ -28,7 +28,7 @@ if (${PLATFORM} MATCHES Mac)
   target_link_libraries(decklink_ndi PRIVATE ${FOUNDATION})
 endif()
 
-if (${PLATFORM} MATCHES Linux)
+if (UNIX)
   find_library(DL dl)
   if (NOT DL)
     message(FATAL_ERROR "dl not found")
