@@ -28,3 +28,12 @@ if (${PLATFORM} MATCHES Mac)
   target_link_libraries(decklink_ndi ${FOUNDATION})
 endif()
 
+if (${PLATFORM} MATCHES Linux)
+  find_library(DL dl)
+  if (NOT DL)
+    message(FATAL_ERROR "dl not found")
+  endif()
+  
+  target_link_libraries(decklink_ndi ${DL})
+endif()
+
