@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <ztd/out_ptr.hpp>
 
@@ -35,10 +36,6 @@ constexpr auto False = FALSE;
 
 using namespace std::literals;
 
-constexpr auto width = 1920;
-constexpr auto height = 1080;
-constexpr auto fps = 25;
-
 constexpr auto bmdColourSpace = bmdFormat8BitYUV;
 constexpr auto ndiColourSpace = NDIlib_FourCC_type_UYVY;
 
@@ -54,6 +51,37 @@ template <typename T> using DeckLinkPtr = std::unique_ptr<T, DeckLinkRelease>;
 
 template <typename T> auto MakeDeckLinkPtr(T *p) { return DeckLinkPtr<T>{p}; }
 
+struct DLString {
+#if defined(__linux__)
+  char const * data;
+#elif defined(__APPLE__) && defined(__MACH__)
+  CFStringRef data;
+#elif defined(WIN32)
+  BSTR data;
+#endif
+
+  auto c_str() const -> char const * {
+#if defined(__linux__)
+    return data;
+#elif defined(__APPLE__) && defined(__MACH__)
+    return CFStringGetCStringPtr(data, kCFStringEncodingASCII);
+#elif defined(WIN32)
+    // TODO wide characters
+#error TODO wide characters
+#endif
+  }
+
+  ~DLString() {
+#if defined(__linux__)
+    free(data);
+#elif defined(__APPLE__) && defined(__MACH__)
+    CFRelease(data);
+#elif defined(WIN32)
+    SysFreeString(data);
+#endif
+  }
+};
+
 using ztd::out_ptr::out_ptr;
 
 template <typename T> auto find_if(auto &&it, auto const &f) {
@@ -68,6 +96,8 @@ template <typename T> auto find_if(auto &&it, auto const &f) {
 
 class Callback : public IDeckLinkInputCallback {
 private:
+  DeckLinkPtr<IDeckLinkDisplayMode> displayMode;
+
   DeckLinkPtr<IDeckLinkVideoInputFrame> lastFrame;
 
 #if defined(UNIX)
@@ -81,7 +111,7 @@ private:
   NDIlib_send_instance_t sender;
 
 public:
-  Callback() {
+  Callback(DeckLinkPtr<IDeckLinkDisplayMode> _displayMode) : displayMode{std::move(_displayMode)} {
 #if OS == APPLE
     auto dir = "/usr/local/lib/"s;
 #elif
@@ -110,7 +140,7 @@ public:
       std::terminate();
     }
 
-    auto send_create = NDIlib_send_create_t{"Decklink", nullptr, false, false};
+    auto send_create = NDIlib_send_create_t{"DeckLink", nullptr, false, false};
 
     sender = lib->send_create(&send_create);
     if (sender == nullptr) {
@@ -142,9 +172,33 @@ private:
     void *data;
     bmd_frame->GetBytes(&data);
 
+    BMDTimeValue fps_value;
+    BMDTimeScale fps_scale;
+    displayMode->GetFrameRate(&fps_value, &fps_scale);
+
+    auto format = [&] {
+      switch (displayMode->GetFieldDominance()) {
+        case bmdUnknownFieldDominance:
+          std::cerr << "Unknown field dominance\n";
+          std::terminate();
+        case bmdLowerFieldFirst:
+          std::cerr << "NDI does not support bottom field first formats\n";
+          std::terminate();
+        case bmdUpperFieldFirst:
+          return NDIlib_frame_format_type_interleaved;
+        case bmdProgressiveFrame:
+          return NDIlib_frame_format_type_progressive;
+        case bmdProgressiveSegmentedFrame:
+          return NDIlib_frame_format_type_interleaved;
+        default:
+          std::cerr << "Unknown enum case\n";
+          std::terminate();
+      }
+    }();
+
     auto ndi_frame = NDIlib_video_frame_v2_t(
-        bmd_frame->GetWidth(), bmd_frame->GetHeight(), ndiColourSpace, fps, 1,
-        16.0f / 9.0f, NDIlib_frame_format_type_progressive, 0,
+        bmd_frame->GetWidth(), bmd_frame->GetHeight(), ndiColourSpace, fps_scale, fps_value,
+        0.0f, format, 0,
         static_cast<uint8_t *>(data), bmd_frame->GetRowBytes());
 
     lib->send_send_video_async_v2(sender, &ndi_frame);
@@ -158,7 +212,8 @@ private:
                           IDeckLinkDisplayMode *newDisplayMode,
                           BMDDetectedVideoInputFormatFlags detectedSignalFlags)
       -> HRESULT override {
-    return E_FAIL;
+    displayMode = MakeDeckLinkPtr(newDisplayMode);
+    return S_OK;
   }
 
   auto QueryInterface(REFIID iid, LPVOID *ppv) -> HRESULT override {
@@ -169,27 +224,62 @@ private:
 };
 
 int main(int, char **) {
+  auto deckLink = [&] {
 #if defined(UNIX)
-  auto deckLinkIterator = MakeDeckLinkPtr(CreateDeckLinkIteratorInstance());
+    auto deckLinkIterator = MakeDeckLinkPtr(CreateDeckLinkIteratorInstance());
 #elif defined(WIN32)
-  auto deckLinkIterator = DeckLinkPtr<IDeckLinkIterator>{};
-  if (CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
-                       IID_IDeckLinkIterator,
-                       out_ptr(deckLinkIterator)) != S_OK) {
-    std::cerr << "Could not get a DeckLink Iterator (Windows)\n";
-    std::terminate();
-  }
+    auto deckLinkIterator = DeckLinkPtr<IDeckLinkIterator>{};
+    if (CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
+                         IID_IDeckLinkIterator,
+                         out_ptr(deckLinkIterator)) != S_OK) {
+      std::cerr << "Could not get a DeckLink Iterator (Windows)\n";
+      std::terminate();
+    }
 #endif
 
-  if (deckLinkIterator == nullptr) {
-    std::cerr << "Could not get a DeckLink Iterator\n";
-    std::terminate();
-  }
+    if (deckLinkIterator == nullptr) {
+      std::cerr << "Could not get a DeckLink Iterator\n";
+      std::terminate();
+    }
 
-  auto deckLink = DeckLinkPtr<IDeckLink>{};
-  if (deckLinkIterator->Next(out_ptr(deckLink)) != S_OK) {
-    std::cerr << "Could not find a DeckLink device\n";
-    std::terminate();
+    auto deckLinks = std::vector<DeckLinkPtr<IDeckLink>>{};
+    {
+      auto deckLink = DeckLinkPtr<IDeckLink>{};
+      while (deckLinkIterator->Next(out_ptr(deckLink)) == S_OK) {
+        deckLinks.push_back(std::move(deckLink));
+      }
+    }
+  
+    auto deckLinkIndex = [&] {
+      if (deckLinks.empty()) {
+        std::cerr << "Could not find a DeckLink device\n";
+        std::terminate();
+      } else {
+        std::cout << "DeckLinks:\n";
+        {
+          auto i = 0;
+          for (auto const & deckLink : deckLinks) {
+            auto name = DLString{};
+            deckLink->GetDisplayName(&name.data);
+            std::cout << i++ << ' ' << name.c_str() << '\n';
+          }
+        }
+        std::cout << "Please select: ";
+        auto i = -1;
+        while (i < 0 || i >= deckLinks.size()) {
+          std::cin >> i;
+        }
+        return i;
+      }
+    }();
+  
+    return std::move(deckLinks[deckLinkIndex]);
+  }();
+
+  {
+    auto name = DLString{};
+    deckLink->GetDisplayName(&name.data);
+    std::cout << "Selected: " << name.c_str() << '\n';
   }
 
   auto deckLinkInput = DeckLinkPtr<IDeckLinkInput>{};
@@ -199,13 +289,55 @@ int main(int, char **) {
     std::terminate();
   }
 
-  auto displayModeIterator = DeckLinkPtr<IDeckLinkDisplayModeIterator>{};
-  if (deckLinkInput->GetDisplayModeIterator(out_ptr(displayModeIterator)) !=
-      S_OK) {
-    std::cerr << "Could not get a display mode iterator\n";
-    std::terminate();
+  auto displayMode = [&] {
+    auto displayModeIterator = DeckLinkPtr<IDeckLinkDisplayModeIterator>{};
+    if (deckLinkInput->GetDisplayModeIterator(out_ptr(displayModeIterator)) !=
+        S_OK) {
+      std::cerr << "Could not get a display mode iterator\n";
+      std::terminate();
+    }
+
+    auto modes = std::vector<DeckLinkPtr<IDeckLinkDisplayMode>>{};
+    {
+      auto mode = DeckLinkPtr<IDeckLinkDisplayMode>{};
+      while (displayModeIterator->Next(out_ptr(mode)) == S_OK) {
+        modes.push_back(std::move(mode));
+      }
+    }
+  
+    auto const index = [&] {
+      if (modes.empty()) {
+        std::cerr << "Could not find any display modes\n";
+        std::terminate();
+      } else {
+        std::cout << "Modes:\n";
+        {
+          auto i = 0;
+          for (auto const & mode : modes) {
+            auto name = DLString{};
+            mode->GetName(&name.data);
+            std::cout << i++ << ' ' << name.c_str() << '\n';
+          }
+        }
+        std::cout << "Please select: ";
+        auto i = -1;
+        while (i < 0 || i >= modes.size()) {
+          std::cin >> i;
+        }
+        return i;
+      }
+    }();
+  
+    return std::move(modes[index]);
+  }();
+
+  {
+    auto name = DLString{};
+    displayMode->GetName(&name.data);
+    std::cout << "Selected: " << name.c_str() << '\n';
   }
 
+/*
   auto displayMode =
       find_if<IDeckLinkDisplayMode>(displayModeIterator, [&](auto const &mode) {
         if (mode->GetWidth() != width) {
@@ -233,6 +365,7 @@ int main(int, char **) {
     std::cerr << "Could not find a matching display mode\n";
     std::terminate();
   }
+*/
 
   if (deckLinkInput->EnableVideoInput(displayMode->GetDisplayMode(),
                                       bmdColourSpace,
@@ -241,7 +374,7 @@ int main(int, char **) {
     std::terminate();
   }
 
-  auto callback = Callback{};
+  auto callback = Callback{std::move(displayMode)};
 
   if (deckLinkInput->SetCallback(&callback) != S_OK) {
     std::cerr << "Could not set callback\n";
