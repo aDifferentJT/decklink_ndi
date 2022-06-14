@@ -73,7 +73,7 @@ struct DLString {
 
   ~DLString() {
 #if defined(__linux__)
-    free(data);
+    free(const_cast<char*>(data));
 #elif defined(__APPLE__) && defined(__MACH__)
     CFRelease(data);
 #elif defined(WIN32)
