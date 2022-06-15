@@ -112,11 +112,11 @@ private:
 public:
   Callback(DeckLinkPtr<IDeckLinkDisplayMode> _displayMode) : displayMode{std::move(_displayMode)} {
 #if defined(__APPLE__) && defined(__MACH__)
-    auto dir = "/usr/local/lib/"s;
+    auto dir = "/usr/local/lib"s;
 #else
     auto dir = std::string{std::getenv(NDILIB_REDIST_FOLDER)};
 #endif
-    auto path = dir + NDILIB_LIBRARY_NAME;
+    auto path = dir + "/" + NDILIB_LIBRARY_NAME;
 
 #if defined(UNIX)
     dl = dlopen(path.c_str(), 0);
@@ -124,7 +124,7 @@ public:
     dl = LoadLibraryA(path.c_str());
 #endif
     if (!dl) {
-      std::cerr << "Can't find NDI lib at " << path << '\n';
+      std::cerr << "Can't find NDI lib, please get it from " << NDILIB_REDIST_URL << '\n';
       std::terminate();
     }
     lib = reinterpret_cast<decltype(&NDIlib_v5_load)>(
