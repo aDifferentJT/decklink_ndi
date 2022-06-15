@@ -113,7 +113,7 @@ public:
   Callback(DeckLinkPtr<IDeckLinkDisplayMode> _displayMode) : displayMode{std::move(_displayMode)} {
 #if OS == APPLE
     auto dir = "/usr/local/lib/"s;
-#elif
+#else
     auto dir = std::string{NDILIB_REDIST_FOLDER};
 #endif
     auto path = dir + NDILIB_LIBRARY_NAME;
