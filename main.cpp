@@ -60,14 +60,11 @@ struct DLString {
   BSTR data;
 #endif
 
-  auto c_str() const -> char const * {
-#if defined(__linux__)
-    return data;
-#elif defined(__APPLE__) && defined(__MACH__)
-    return CFStringGetCStringPtr(data, kCFStringEncodingASCII);
-#elif defined(WIN32)
-    // TODO wide characters
-#error TODO wide characters
+  friend auto operator<<(std::ostream & os, DLString const & str) -> std::ostream & {
+#if defined(__APPLE__) && defined(__MACH__)
+    return os << CFStringGetCStringPtr(str.data, kCFStringEncodingASCII);
+#else
+    return os << str.data;
 #endif
   }
 
@@ -261,7 +258,7 @@ int main(int, char **) {
           for (auto const & deckLink : deckLinks) {
             auto name = DLString{};
             deckLink->GetDisplayName(&name.data);
-            std::cout << i++ << ' ' << name.c_str() << '\n';
+            std::cout << i++ << ' ' << name << '\n';
           }
         }
         std::cout << "Please select: ";
@@ -279,7 +276,7 @@ int main(int, char **) {
   {
     auto name = DLString{};
     deckLink->GetDisplayName(&name.data);
-    std::cout << "Selected: " << name.c_str() << '\n';
+    std::cout << "Selected: " << name << '\n';
   }
 
   auto deckLinkInput = DeckLinkPtr<IDeckLinkInput>{};
@@ -316,7 +313,7 @@ int main(int, char **) {
           for (auto const & mode : modes) {
             auto name = DLString{};
             mode->GetName(&name.data);
-            std::cout << i++ << ' ' << name.c_str() << '\n';
+            std::cout << i++ << ' ' << name << '\n';
           }
         }
         std::cout << "Please select: ";
@@ -334,7 +331,7 @@ int main(int, char **) {
   {
     auto name = DLString{};
     displayMode->GetName(&name.data);
-    std::cout << "Selected: " << name.c_str() << '\n';
+    std::cout << "Selected: " << name << '\n';
   }
 
 /*
