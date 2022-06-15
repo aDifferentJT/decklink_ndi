@@ -114,7 +114,7 @@ public:
 #if defined(__APPLE__) && defined(__MACH__)
     auto dir = "/usr/local/lib/"s;
 #else
-    auto dir = std::string{NDILIB_REDIST_FOLDER};
+    auto dir = std::string{std::getenv(NDILIB_REDIST_FOLDER)};
 #endif
     auto path = dir + NDILIB_LIBRARY_NAME;
 
