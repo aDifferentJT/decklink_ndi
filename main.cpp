@@ -227,6 +227,10 @@ int main(int, char **) {
 #if defined(UNIX)
     auto deckLinkIterator = MakeDeckLinkPtr(CreateDeckLinkIteratorInstance());
 #elif defined(WIN32)
+    if (CoInitialize(nullptr) != S_OK) {
+      std::cerr << "Could not initialise COM (Windows)\n";
+      std::terminate();
+    }
     auto deckLinkIterator = DeckLinkPtr<IDeckLinkIterator>{};
     if (CoCreateInstance(CLSID_CDeckLinkIterator, nullptr, CLSCTX_ALL,
                          IID_IDeckLinkIterator,
