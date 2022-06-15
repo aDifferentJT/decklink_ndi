@@ -124,7 +124,7 @@ public:
     dl = LoadLibraryA(path.c_str());
 #endif
     if (!dl) {
-      std::cerr << "Can't find NDI lib\n";
+      std::cerr << "Can't find NDI lib at " << path << '\n';
       std::terminate();
     }
     lib = reinterpret_cast<decltype(&NDIlib_v5_load)>(
@@ -135,7 +135,7 @@ public:
 #endif
         (dl, "NDIlib_v5_load"))();
     if (lib == nullptr) {
-      std::cerr << "Can't find NDI lib\n";
+      std::cerr << "Can't find NDI symbol\n";
       std::terminate();
     }
 
